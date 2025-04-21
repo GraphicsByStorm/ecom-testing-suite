@@ -7,7 +7,6 @@ use ratatui::{
 };
 use std::{fs, process::Command, sync::Mutex};
 use once_cell::sync::Lazy;
-use crate::theme::*;
 
 pub static SMART_OUTPUT: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
 pub static SMART_ACTIVE: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));

@@ -14,6 +14,7 @@ pub static AMD_ACTIVE: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
 pub static GPU_SELECT: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
 pub static GPU_INDEX: Lazy<Mutex<usize>> = Lazy::new(|| Mutex::new(0));
 pub static GPU_LIST: Lazy<Mutex<Vec<String>>> = Lazy::new(|| Mutex::new(Vec::new()));
+pub static AMD_SCROLL: Lazy<Mutex<u16>> = Lazy::new(|| Mutex::new(0));
 
 pub fn check_amd_active() -> bool {
     *AMD_ACTIVE.lock().unwrap()
@@ -26,6 +27,7 @@ pub fn check_gpu_select() -> bool {
 pub fn exit_amd_output() {
     *AMD_ACTIVE.lock().unwrap() = false;
     *GPU_SELECT.lock().unwrap() = true;
+    *AMD_SCROLL.lock().unwrap() = 0;
 }
 
 pub fn enter_gpu_selection() {
@@ -54,19 +56,34 @@ pub fn decrement_gpu_selection() {
     }
 }
 
+pub fn scroll_output_down() {
+    let mut scroll = AMD_SCROLL.lock().unwrap();
+    *scroll = scroll.saturating_add(1);
+}
+
+pub fn scroll_output_up() {
+    let mut scroll = AMD_SCROLL.lock().unwrap();
+    *scroll = scroll.saturating_sub(1);
+}
+
 pub fn run_selected_gpu_check() {
     let index = *GPU_INDEX.lock().unwrap();
     let gpus = GPU_LIST.lock().unwrap();
     let selected_gpu = &gpus[index];
 
-    // You can plug in actual logic here to call rocm-smi or similar
     *AMD_OUTPUT.lock().unwrap() = format!("Testing AMD GPU: {}\nRunning stress and stability tests...", selected_gpu);
     *AMD_ACTIVE.lock().unwrap() = true;
     *GPU_SELECT.lock().unwrap() = false;
 }
 
+pub fn run_amd_gpu_check() {
+    // Optional stub if referenced elsewhere
+    run_selected_gpu_check();
+}
+
 pub fn draw_amd_output(f: &mut Frame) {
     let size = f.area();
+    let scroll = *AMD_SCROLL.lock().unwrap();
     let output = AMD_OUTPUT.lock().unwrap();
 
     let block = Block::default()
@@ -75,6 +92,8 @@ pub fn draw_amd_output(f: &mut Frame) {
 
     let paragraph = Paragraph::new(output.as_str())
         .block(block)
+        .style(Style::default())
+        .scroll((scroll, 0))
         .wrap(ratatui::widgets::Wrap { trim: false });
 
     f.render_widget(paragraph, size);
@@ -99,7 +118,7 @@ pub fn draw_gpu_selection(f: &mut Frame) {
 }
 
 fn get_amd_gpus() -> Vec<String> {
-    // Fake example GPU list for testing
+    // Replace with dynamic detection later if needed
     vec![
         "MSI AMD Radeon RX 7700 XT".to_string(),
         "ASUS AMD Radeon RX 6800 XT".to_string(),

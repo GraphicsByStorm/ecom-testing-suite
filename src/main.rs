@@ -56,7 +56,7 @@ fn run_app<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>) -> io::Resu
 
     loop {
         terminal.draw(|f| {
-            let size = f.size();
+            let size = f.area();
 
             if check_smart_active() {
                 draw_smart_output(f);
