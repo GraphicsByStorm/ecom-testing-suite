@@ -1,63 +1,58 @@
-use std::{io, time::Duration};
-
-use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
-
+// Required imports
+use std::{io, thread};
+use std::process::Command;
+use crossterm::terminal::{enable_raw_mode, disable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
+use crossterm::event::{self, Event, KeyCode, EnableMouseCapture, DisableMouseCapture};
 use ratatui::{
-    backend::CrosstermBackend,
     Terminal,
-    widgets::{List, ListItem},
-    layout::{Layout, Constraint, Direction},
-    style::{Style, Color},
-    text::Span,
+    backend::CrosstermBackend,
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Style},
+    text::{Line, Span},
+    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
+    Frame,
 };
 
 mod smart;
-mod theme;
 mod amd_gpu;
+mod photo_exporter;
 
-use crate::theme::*;
-use crate::smart::{
-    check_smart_active, exit_smart_output, scroll_output_down as scroll_smart_down,
-    scroll_output_up as scroll_smart_up, run_selected_smart, enter_disk_selection,
-    check_smart_disk_select, exit_disk_selection, increment_disk_selection, decrement_disk_selection,
-    draw_smart_output, draw_disk_selection,
+// Module imports
+use smart::{
+    check_smart_active, draw_smart_output, exit_smart_output, check_smart_disk_select,
+    draw_disk_selection, exit_disk_selection, enter_disk_selection, increment_disk_selection,
+    decrement_disk_selection, scroll_output_down as scroll_smart_down,
+    scroll_output_up as scroll_smart_up, run_selected_smart
+};
+use amd_gpu::{
+    check_amd_active, draw_amd_output, exit_amd_output, run_amd_gpu_check,
+    check_gpu_select, draw_gpu_selection, enter_gpu_selection, exit_gpu_selection,
+    increment_gpu_selection, decrement_gpu_selection, run_selected_gpu_check,
+    scroll_output_down as scroll_amd_down, scroll_output_up as scroll_amd_up
+};
+use photo_exporter::{
+    run_photo_exporter, check_export_active, draw_photo_export_progress, exit_export
 };
 
-use crate::amd_gpu::{
-    draw_amd_output, draw_gpu_selection, check_amd_active, check_gpu_select,
-    exit_amd_output, exit_gpu_selection, run_selected_gpu_check,
-    increment_gpu_selection, decrement_gpu_selection, enter_gpu_selection,
-    scroll_output_down as scroll_amd_down,
-    scroll_output_up as scroll_amd_up,
-};
-
-fn main() -> Result<(), io::Error> {
+fn main() -> io::Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    crossterm::execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
     let result = run_app(&mut terminal);
 
     disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
+    crossterm::execute!(terminal.backend_mut(), LeaveAlternateScreen, DisableMouseCapture)?;
     terminal.show_cursor()?;
 
     result
 }
 
-fn run_app(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>) -> io::Result<()> {
+fn run_app<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
+    let menu_items = vec!["SMART Test", "AMD GPU Test", "Photo Export"];
     let mut selected_menu_index = 0;
-    let menu_items = vec!["SMART Disk Test", "AMD GPU Test"];
 
     loop {
         terminal.draw(|f| {
@@ -71,44 +66,36 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>) -> io::Re
                 draw_amd_output(f);
             } else if check_gpu_select() {
                 draw_gpu_selection(f);
+            } else if check_export_active() {
+                draw_photo_export_progress(f);
             } else {
                 let chunks = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(5)
-                    .constraints(
-                        [
-                            Constraint::Percentage(20),
-                            Constraint::Percentage(80),
-                        ]
-                        .as_ref(),
-                    )
+                    .constraints([
+                        Constraint::Length(3),
+                        Constraint::Min(1),
+                    ])
                     .split(size);
 
-                let title = List::new(vec![ListItem::new(Span::styled(
-                    "Electronics Testing Suite",
-                    Style::default().fg(Color::Cyan),
-                ))])
-                .block(menu_block(" ELECTRONICS TESTING SUITE "));
-
-                let items: Vec<ListItem> = menu_items
+                let menu: Vec<ListItem> = menu_items
                     .iter()
-                    .enumerate()
-                    .map(|(_, m)| ListItem::new(Span::styled(*m, normal_text_style())))
+                    .map(|i| ListItem::new(Line::from(*i)))
                     .collect();
 
-                let menu = List::new(items)
-                    .block(menu_block(" SELECT A TEST "))
-                    .highlight_style(highlight_style())
-                    .highlight_symbol(">> ");
-
-                f.render_widget(title, chunks[0]);
-                let mut state = ratatui::widgets::ListState::default();
+                let mut state = ListState::default();
                 state.select(Some(selected_menu_index));
-                f.render_stateful_widget(menu, chunks[1], &mut state);
+
+                let list = List::new(menu)
+                    .block(Block::default().title(" Main Menu ").borders(Borders::ALL))
+                    .highlight_style(Style::default().fg(Color::Black).bg(Color::White))
+                    .highlight_symbol("▶ ");
+
+                f.render_stateful_widget(list, chunks[1], &mut state);
             }
         })?;
 
-        if event::poll(Duration::from_millis(100))? {
+        if event::poll(std::time::Duration::from_millis(100))? {
             if let Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Char('q') => {
@@ -120,8 +107,24 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>) -> io::Re
                             exit_amd_output();
                         } else if check_gpu_select() {
                             exit_gpu_selection();
+                        } else if check_export_active() {
+                            exit_export();
                         } else {
                             break;
+                        }
+                    }
+                    KeyCode::Char('j') => {
+                        if check_smart_active() {
+                            scroll_smart_down();
+                        } else if check_amd_active() {
+                            scroll_amd_down();
+                        }
+                    }
+                    KeyCode::Char('k') => {
+                        if check_smart_active() {
+                            scroll_smart_up();
+                        } else if check_amd_active() {
+                            scroll_amd_up();
                         }
                     }
                     KeyCode::Up => {
@@ -142,20 +145,6 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>) -> io::Re
                             selected_menu_index = (selected_menu_index + 1) % menu_items.len();
                         }
                     }
-                    KeyCode::Char('j') => {
-                        if check_smart_active() {
-                            scroll_smart_down();
-                        } else if check_amd_active() {
-                            scroll_amd_down();
-                        }
-                    }
-                    KeyCode::Char('k') => {
-                        if check_smart_active() {
-                            scroll_smart_up();
-                        } else if check_amd_active() {
-                            scroll_amd_up();
-                        }
-                    }
                     KeyCode::Enter => {
                         if check_smart_disk_select() {
                             run_selected_smart();
@@ -165,6 +154,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>) -> io::Re
                             match selected_menu_index {
                                 0 => enter_disk_selection(),
                                 1 => enter_gpu_selection(),
+                                2 => run_photo_exporter(),
                                 _ => {}
                             }
                         }
