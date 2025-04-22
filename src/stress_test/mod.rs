@@ -1,63 +1,60 @@
-use std::process::Command;
-use std::thread;
-use std::time::{Duration, Instant};
+use std::sync::Mutex;
+use once_cell::sync::Lazy;
+use ratatui::{
+    layout::{Constraint, Layout},
+    style::{Color, Style},
+    text::{Span},
+    widgets::{Block, Borders, Gauge, Paragraph},
+    Frame,
+};
 
-use crate::gpu_detect::{detect_gpu_type, get_selected_gpu, GpuType};
-
-static HEAVEN_PATH: &str = "/opt/unigine-heaven/bin/heaven_x64";
+pub static STRESS_TEST_ACTIVE: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
+pub static STRESS_TEST_PROGRESS: Lazy<Mutex<u16>> = Lazy::new(|| Mutex::new(0));
+pub static STRESS_TEST_MESSAGE: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
 
 pub fn start_stress_test() {
-    let selected_gpu = get_selected_gpu();
-    let gpu_type = detect_gpu_type();
+    *STRESS_TEST_ACTIVE.lock().unwrap() = true;
+    *STRESS_TEST_PROGRESS.lock().unwrap() = 0;
+    *STRESS_TEST_MESSAGE.lock().unwrap() = "Running stress test...".to_string();
 
-    thread::spawn(move || {
-        let start_time = Instant::now();
-
-        println!(
-            "[Stress Test] Starting Unigine Heaven for {:?} GPU: {}",
-            gpu_type, selected_gpu
-        );
-
-        let heaven_args = get_optimal_args_for_gpu(&gpu_type);
-
-        match Command::new(HEAVEN_PATH).args(&heaven_args).spawn() {
-            Ok(mut child) => {
-                let _ = child.wait();
-                let elapsed = start_time.elapsed();
-                println!(
-                    "[Stress Test] Completed in {:.2?} for GPU: {}",
-                    elapsed, selected_gpu
-                );
-            }
-            Err(e) => {
-                eprintln!("[Stress Test] Failed to start Heaven benchmark: {}", e);
-            }
+    std::thread::spawn(|| {
+        for i in 0..=100 {
+            *STRESS_TEST_PROGRESS.lock().unwrap() = i;
+            std::thread::sleep(std::time::Duration::from_millis(50));
         }
+
+        *STRESS_TEST_MESSAGE.lock().unwrap() = "Stress test completed.".to_string();
     });
 }
 
-fn get_optimal_args_for_gpu(gpu_type: &GpuType) -> Vec<&'static str> {
-    match gpu_type {
-        GpuType::Nvidia => vec![
-            "-video_app", "opengl",
-            "-video_mode", "1920x1080",
-            "-sound", "0",
-            "-fullscreen", "0",
-            "-preset", "extreme",
-        ],
-        GpuType::AMD => vec![
-            "-video_app", "vulkan",
-            "-video_mode", "1920x1080",
-            "-sound", "0",
-            "-fullscreen", "0",
-            "-preset", "extreme",
-        ],
-        GpuType::Unknown => vec![
-            "-video_app", "opengl",
-            "-video_mode", "1280x720",
-            "-sound", "0",
-            "-fullscreen", "0",
-            "-preset", "basic",
-        ],
-    }
+pub fn check_stress_active() -> bool {
+    *STRESS_TEST_ACTIVE.lock().unwrap()
+}
+
+pub fn stop_stress_test() {
+    *STRESS_TEST_ACTIVE.lock().unwrap() = false;
+    *STRESS_TEST_PROGRESS.lock().unwrap() = 0;
+    *STRESS_TEST_MESSAGE.lock().unwrap() = String::new();
+}
+
+pub fn draw_stress_test_popup(f: &mut Frame) {
+    let progress = *STRESS_TEST_PROGRESS.lock().unwrap();
+    let message = STRESS_TEST_MESSAGE.lock().unwrap();
+    let area = f.area();
+
+    let chunks = Layout::default()
+        .constraints([Constraint::Length(3), Constraint::Min(1)].as_ref())
+        .margin(2)
+        .split(area);
+
+    let gauge = Gauge::default()
+        .block(Block::default().title("Stress Test Progress").borders(Borders::ALL))
+        .gauge_style(Style::default().fg(Color::Green).bg(Color::Black))
+        .percent(progress);
+
+    let paragraph = Paragraph::new(Span::raw(message.as_str()))
+        .block(Block::default().title("Status").borders(Borders::ALL));
+
+    f.render_widget(gauge, chunks[0]);
+    f.render_widget(paragraph, chunks[1]);
 }

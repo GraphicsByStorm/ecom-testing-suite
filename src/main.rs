@@ -11,17 +11,18 @@ use ratatui::{
     Terminal,
 };
 
-mod menu;
 mod theme;
-mod smart;
-mod photo_exporter;
-mod nvidia_drivers;
-mod keyboard_test;
-mod gamepad_test;
 mod audio_test;
+mod gamepad_test;
+mod gpu_detect;
 mod gpu_test;
-mod stress_test;
+mod keyboard_test;
+mod menu;
+mod nvidia_drivers;
+mod photo_exporter;
+mod smart;
 mod stability_test;
+mod stress_test;
 
 fn main() -> io::Result<()> {
     enable_raw_mode()?;

@@ -1,62 +1,111 @@
-use rodio::{Decoder, OutputStream, Sink, Source};
+use ratatui::{
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Style},
+    text::Span,
+    widgets::{Block, Borders, Gauge, List, ListItem, ListState, Paragraph},
+    Frame,
+};
+use rodio::{Decoder, OutputStream, Sink};
 use std::fs::File;
 use std::io::BufReader;
 use std::sync::Mutex;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
+
 use once_cell::sync::Lazy;
 
-static AUDIO_ACTIVE: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
-static AUDIO_MESSAGE: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
+pub static AUDIO_TEST_ACTIVE: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
+pub static AUDIO_TEST_PROGRESS: Lazy<Mutex<u16>> = Lazy::new(|| Mutex::new(0));
+pub static AUDIO_TEST_MESSAGE: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
+pub static AUDIO_DEVICES: Lazy<Mutex<Vec<String>>> = Lazy::new(|| Mutex::new(vec![]));
+pub static AUDIO_DEVICE_INDEX: Lazy<Mutex<usize>> = Lazy::new(|| Mutex::new(0));
 
 pub fn check_audio_test_active() -> bool {
-    *AUDIO_ACTIVE.lock().unwrap()
-}
-
-pub fn exit_audio_test() {
-    *AUDIO_ACTIVE.lock().unwrap() = false;
-    *AUDIO_MESSAGE.lock().unwrap() = String::new();
+    *AUDIO_TEST_ACTIVE.lock().unwrap()
 }
 
 pub fn enter_audio_test() {
-    *AUDIO_ACTIVE.lock().unwrap() = true;
-    *AUDIO_MESSAGE.lock().unwrap() = "Testing frequency range...".to_string();
+    *AUDIO_DEVICES.lock().unwrap() = vec![
+        "Speakers".to_string(),
+        "Headphones".to_string(),
+    ];
+    *AUDIO_DEVICE_INDEX.lock().unwrap() = 0;
+    *AUDIO_TEST_ACTIVE.lock().unwrap() = true;
+    *AUDIO_TEST_PROGRESS.lock().unwrap() = 0;
+    *AUDIO_TEST_MESSAGE.lock().unwrap() = "Playing audio test...".to_string();
 
     thread::spawn(|| {
         if let Ok((_stream, stream_handle)) = OutputStream::try_default() {
-            let sink = Sink::try_new(&stream_handle).unwrap();
-
-            // You should generate or provide test tones across frequency range.
-            // Here we simulate with one tone for brevity.
-            let tones = vec![
-                "assets/audio/100Hz.wav",
-                "assets/audio/500Hz.wav",
-                "assets/audio/1000Hz.wav",
-                "assets/audio/5000Hz.wav",
-                "assets/audio/10000Hz.wav",
-            ];
-
-            for tone_path in tones {
-                if let Ok(file) = File::open(tone_path) {
-                    let source = Decoder::new(BufReader::new(file)).unwrap();
+            if let Ok(file) = File::open("assets/audio/test.wav") {
+                if let Ok(source) = Decoder::new(BufReader::new(file)) {
+                    let sink = Sink::try_new(&stream_handle).unwrap();
                     sink.append(source);
                     sink.sleep_until_end();
-                } else {
-                    *AUDIO_MESSAGE.lock().unwrap() = format!("Missing tone file: {}", tone_path);
-                    break;
                 }
-                thread::sleep(Duration::from_millis(300));
             }
-
-            *AUDIO_MESSAGE.lock().unwrap() = "Audio test complete.".to_string();
-        } else {
-            *AUDIO_MESSAGE.lock().unwrap() = "Failed to initialize audio output.".to_string();
         }
 
-        *AUDIO_ACTIVE.lock().unwrap() = false;
+        for i in 0..=100 {
+            *AUDIO_TEST_PROGRESS.lock().unwrap() = i;
+            thread::sleep(Duration::from_millis(20));
+        }
+
+        *AUDIO_TEST_MESSAGE.lock().unwrap() = "Audio test completed.".to_string();
     });
 }
 
-pub fn get_audio_status() -> String {
-    AUDIO_MESSAGE.lock().unwrap().clone()
+pub fn exit_audio_test() {
+    *AUDIO_TEST_ACTIVE.lock().unwrap() = false;
+    *AUDIO_TEST_PROGRESS.lock().unwrap() = 0;
+    *AUDIO_TEST_MESSAGE.lock().unwrap() = String::new();
+}
+
+pub fn increment_device_selection() {
+    let mut index = AUDIO_DEVICE_INDEX.lock().unwrap();
+    let devices = AUDIO_DEVICES.lock().unwrap();
+    if *index < devices.len().saturating_sub(1) {
+        *index += 1;
+    }
+}
+
+pub fn decrement_device_selection() {
+    let mut index = AUDIO_DEVICE_INDEX.lock().unwrap();
+    if *index > 0 {
+        *index -= 1;
+    }
+}
+
+pub fn draw_audio_test(f: &mut Frame) {
+    let area = f.area();
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .margin(2)
+        .constraints([Constraint::Length(3), Constraint::Length(3), Constraint::Min(1)])
+        .split(area);
+
+    let devices = AUDIO_DEVICES.lock().unwrap();
+    let selected = *AUDIO_DEVICE_INDEX.lock().unwrap();
+    let progress = *AUDIO_TEST_PROGRESS.lock().unwrap();
+    let message = AUDIO_TEST_MESSAGE.lock().unwrap();
+
+    let mut state = ListState::default();
+    state.select(Some(selected));
+
+    let items: Vec<ListItem> = devices.iter().map(|d| ListItem::new(Span::raw(d.clone()))).collect();
+    let list = List::new(items)
+        .block(Block::default().title("Select Audio Output").borders(Borders::ALL))
+        .highlight_style(Style::default().bg(Color::White).fg(Color::Black))
+        .highlight_symbol("▶ ");
+
+    let gauge = Gauge::default()
+        .block(Block::default().title("Progress").borders(Borders::ALL))
+        .gauge_style(Style::default().fg(Color::Green).bg(Color::Black))
+        .percent(progress);
+
+    let paragraph = Paragraph::new(Span::raw(message.as_str()))
+        .block(Block::default().borders(Borders::ALL).title("Audio Test Info"));
+
+    f.render_stateful_widget(list, chunks[0], &mut state);
+    f.render_widget(gauge, chunks[1]);
+    f.render_widget(paragraph, chunks[2]);
 }

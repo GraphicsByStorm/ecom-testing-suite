@@ -11,7 +11,7 @@ use ratatui::{
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum TestMode {
     Stress,
     Stability,
@@ -19,15 +19,18 @@ pub enum TestMode {
 
 pub static GPU_TEST_ACTIVE: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
 pub static CURRENT_TEST_MODE: Lazy<Mutex<Option<TestMode>>> = Lazy::new(|| Mutex::new(None));
+pub static GPU_TEST_STARTED: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
 
 pub fn set_test_mode(mode: TestMode) {
     *GPU_TEST_ACTIVE.lock().unwrap() = true;
     *CURRENT_TEST_MODE.lock().unwrap() = Some(mode);
+    *GPU_TEST_STARTED.lock().unwrap() = false; // reset run flag
 }
 
 pub fn clear_test_mode() {
     *GPU_TEST_ACTIVE.lock().unwrap() = false;
     *CURRENT_TEST_MODE.lock().unwrap() = None;
+    *GPU_TEST_STARTED.lock().unwrap() = false;
 }
 
 pub fn check_test_active() -> bool {
@@ -40,15 +43,16 @@ pub fn draw_gpu_testing(f: &mut Frame) {
     let selected_gpu = get_selected_gpu();
     let gpu_type = detect_gpu_type();
     let mode = *CURRENT_TEST_MODE.lock().unwrap();
+    let mut started = GPU_TEST_STARTED.lock().unwrap();
 
     if let Some(test_mode) = mode {
-        match test_mode {
-            TestMode::Stress => {
-                start_stress_test(&selected_gpu, &gpu_type);
+        // Start the test only once
+        if !*started {
+            match test_mode {
+                TestMode::Stress => start_stress_test(),
+                TestMode::Stability => start_stability_test(),
             }
-            TestMode::Stability => {
-                start_stability_test(&selected_gpu, &gpu_type);
-            }
+            *started = true;
         }
 
         let status = format!(
