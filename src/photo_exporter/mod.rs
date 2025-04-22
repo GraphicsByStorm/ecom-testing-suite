@@ -1,7 +1,8 @@
+// PHOTO EXPORTING LOGIC
 use ratatui::{
     layout::{Constraint, Layout},
     style::{Color, Style},
-    text::{Span},
+    text::{Line, Span, Text},
     widgets::{Block, Borders, Gauge, Paragraph},
     Frame,
 };
@@ -28,7 +29,6 @@ pub fn run_photo_exporter() {
     *EXPORT_MESSAGE.lock().unwrap() = "Preparing to export photos...".to_string();
 
     thread::spawn(|| {
-        // Navigate to export directory
         let base_path = "/home/ecom/Pictures/ebay";
         let default_start = 84;
 
@@ -51,7 +51,8 @@ fi
 mkdir "$new_folder" && cd "$new_folder" || exit 1
 gphoto2 --get-all-files
 cd ..
-                "#, base_path, default_start
+                "#,
+                base_path, default_start
             ))
             .output();
 
@@ -63,7 +64,7 @@ cd ..
         match output {
             Ok(out) => {
                 *EXPORT_MESSAGE.lock().unwrap() = format!(
-                    "Photo export complete.\n{}",
+                    "Photo export complete:\n{}",
                     String::from_utf8_lossy(&out.stdout)
                 );
             }
@@ -79,19 +80,36 @@ pub fn draw_photo_export_progress(f: &mut Frame) {
     let progress = *EXPORT_PROGRESS.lock().unwrap();
     let message = EXPORT_MESSAGE.lock().unwrap();
 
-    let chunks = Layout::default()
+    let layout = Layout::default()
         .constraints([Constraint::Length(3), Constraint::Min(1)].as_ref())
         .margin(2)
         .split(size);
 
     let gauge = Gauge::default()
         .block(Block::default().title("Export Progress").borders(Borders::ALL))
-        .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Black))
+        .gauge_style(
+            Style::default()
+                .fg(if progress < 50 {
+                    Color::Red
+                } else if progress < 80 {
+                    Color::Yellow
+                } else {
+                    Color::Green
+                })
+                .bg(Color::Black),
+        )
+        .label(format!("{}%", progress))
         .percent(progress);
 
-    let paragraph = Paragraph::new(Span::raw(message.as_str()))
-        .block(Block::default().borders(Borders::ALL).title("Status"));
+    let lines: Vec<Line> = message
+        .lines()
+        .map(|line| Line::raw(line.to_string()))
+        .collect();
 
-    f.render_widget(gauge, chunks[0]);
-    f.render_widget(paragraph, chunks[1]);
+    let paragraph = Paragraph::new(Text::from(lines))
+        .block(Block::default().borders(Borders::ALL).title("Status"))
+        .wrap(ratatui::widgets::Wrap { trim: false });
+
+    f.render_widget(gauge, layout[0]);
+    f.render_widget(paragraph, layout[1]);
 }
