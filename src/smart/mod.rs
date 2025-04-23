@@ -20,14 +20,9 @@ pub fn check_disk_selection_active() -> bool {
     *DISK_SELECTION_ACTIVE.lock().unwrap()
 }
 
-pub fn check_smart_active() -> bool {
-    *SMART_ACTIVE.lock().unwrap()
-}
-
 pub fn enter_disk_selection() {
     let output = Command::new("lsblk")
         .arg("-d")
-        .arg("-e7") // exclude loop devices
         .arg("-o")
         .arg("NAME,SIZE,MODEL")
         .output()
@@ -39,7 +34,7 @@ pub fn enter_disk_selection() {
         .filter_map(|line| {
             let parts: Vec<_> = line.split_whitespace().collect();
             if parts.len() >= 3 {
-                Some(format!("/dev/{} - {} - {}", parts[0], parts[1], parts[2..].join(" ")))
+                Some(format!("/dev/{} - {} - {}", parts[0], parts[1], parts[2]))
             } else {
                 None
             }
@@ -51,8 +46,25 @@ pub fn enter_disk_selection() {
     *DISK_SELECTION_ACTIVE.lock().unwrap() = true;
 }
 
+pub fn get_drive_list() -> Vec<String> {
+    DISK_LIST.lock().unwrap().clone()
+}
+
+pub fn get_selected_drive_index() -> usize {
+    *SELECTED_DISK_INDEX.lock().unwrap()
+}
+
 pub fn exit_disk_selection() {
     *DISK_SELECTION_ACTIVE.lock().unwrap() = false;
+}
+
+pub fn draw_smart_output(f: &mut Frame) {
+    let area = f.area();
+    let output = SMART_OUTPUT.lock().unwrap();
+
+    let block = Block::default().title("SMART Test Result").borders(Borders::ALL);
+    let paragraph = Paragraph::new(Span::raw(output.as_str())).block(block);
+    f.render_widget(paragraph, area);
 }
 
 pub fn draw_disk_selection(f: &mut Frame) {
@@ -86,15 +98,6 @@ pub fn draw_disk_selection(f: &mut Frame) {
 
     f.render_stateful_widget(list, layout[0], &mut state);
     f.render_widget(info, layout[1]);
-}
-
-pub fn draw_smart_output(f: &mut Frame) {
-    let area = f.area();
-    let output = SMART_OUTPUT.lock().unwrap();
-
-    let block = Block::default().title("SMART Test Result").borders(Borders::ALL);
-    let paragraph = Paragraph::new(Span::raw(output.as_str())).block(block);
-    f.render_widget(paragraph, area);
 }
 
 pub fn previous_drive() {
@@ -136,6 +139,10 @@ pub fn run_smart_test_on_selected_drive() {
 
     *SMART_ACTIVE.lock().unwrap() = true;
     *DISK_SELECTION_ACTIVE.lock().unwrap() = false;
+}
+
+pub fn check_smart_active() -> bool {
+    *SMART_ACTIVE.lock().unwrap()
 }
 
 pub fn exit_smart_output() {

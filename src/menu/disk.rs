@@ -47,7 +47,7 @@ pub fn draw_disk_selection(f: &mut Frame) {
 }
 
 pub fn exit_disk_selection() {
-    smart::deactivate_disk_selection();
+    smart::exit_disk_selection();
 }
 
 pub fn decrement_disk_selection() {

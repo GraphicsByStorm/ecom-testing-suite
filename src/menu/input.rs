@@ -6,10 +6,11 @@ use ratatui::{
 };
 
 use crate::{
-    keyboard_test::{self, check_keyboard_test_active, draw_keyboard_test, exit_keyboard_test},
+    keyboard_test::{self, check_keyboard_test_active, draw_keyboard_test, exit_keyboard_test, run_keyboard_test},
     gamepad_test::{self, check_gamepad_test_active, draw_gamepad_test, exit_gamepad_test},
     audio_test::{self, check_audio_test_active, draw_audio_test, exit_audio_test},
 };
+
 
 /// Check if any input test is active
 pub fn check_input_select() -> bool {
@@ -57,5 +58,15 @@ pub fn increment_input_selection() {
         gamepad_test::increment_device_selection();
     } else if check_audio_test_active() {
         audio_test::increment_device_selection();
+    }
+}
+
+pub fn launch_selected_test() {
+    if keyboard_test::check_keyboard_test_active() {
+        keyboard_test::run_keyboard_test(); // You must define this if it doesn't exist
+    } else if gamepad_test::check_gamepad_test_active() {
+        gamepad_test::run_gamepad_test(); // Define this if not created
+    } else if audio_test::check_audio_test_active() {
+        audio_test::run_audio_test(); // Define this too
     }
 }

@@ -14,6 +14,9 @@ use std::time::{Duration, Instant};
 
 use once_cell::sync::Lazy;
 
+static DEVICES: Lazy<Mutex<Vec<String>>> = Lazy::new(|| Mutex::new(vec![]));
+static DEVICE_INDEX: Lazy<Mutex<usize>> = Lazy::new(|| Mutex::new(0));
+static MESSAGE: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
 pub static AUDIO_TEST_ACTIVE: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
 pub static AUDIO_TEST_PROGRESS: Lazy<Mutex<u16>> = Lazy::new(|| Mutex::new(0));
 pub static AUDIO_TEST_MESSAGE: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
@@ -73,6 +76,17 @@ pub fn decrement_device_selection() {
     if *index > 0 {
         *index -= 1;
     }
+}
+
+pub fn run_audio_test() {
+    let devices = DEVICES.lock().unwrap();
+    let index = *DEVICE_INDEX.lock().unwrap();
+
+    let fallback = "No device selected.".to_string();
+    let selected = devices.get(index).unwrap_or(&fallback);
+
+    let mut msg = MESSAGE.lock().unwrap();
+    *msg = format!("Starting test on: {}\n(Audio response test in development)", selected);
 }
 
 pub fn draw_audio_test(f: &mut Frame) {

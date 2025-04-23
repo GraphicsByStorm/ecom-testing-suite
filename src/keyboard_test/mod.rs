@@ -5,6 +5,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
     Frame,
 };
+
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 use std::process::Command;
@@ -28,6 +29,18 @@ pub fn enter_keyboard_test() {
     *DEVICE_INDEX.lock().unwrap() = 0;
     *ACTIVE.lock().unwrap() = true;
     *MESSAGE.lock().unwrap() = "Select your keyboard device. Key response testing coming soon.".to_string();
+}
+
+/// Called on Enter key — eventually this could verify input mapping
+pub fn run_keyboard_test() {
+    let devices = DEVICES.lock().unwrap();
+    let index = *DEVICE_INDEX.lock().unwrap();
+
+    let fallback = "No device selected.".to_string();
+    let selected = devices.get(index).unwrap_or(&fallback);
+
+    let mut msg = MESSAGE.lock().unwrap();
+    *msg = format!("Starting test on: {}\n(Feature under development)", selected);
 }
 
 pub fn increment_device_selection() {

@@ -6,21 +6,20 @@ use ratatui::{
     Frame,
 };
 
-use crate::nvidia_drivers::{
-    check_driver_selection,
-    check_driver_installing,
-    draw_driver_menu,
-    draw_driver_install_output,
-    get_driver_list,
-    get_driver_index,
-    increment_driver_selection,
-    decrement_driver_selection,
-    install_selected_driver,
-    reset_driver_state,
-};
-
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
+
+use crate::nvidia_drivers::{
+    get_driver_list,
+    get_driver_index,
+    check_driver_selection,
+    check_driver_installing,
+    draw_driver_install_output,
+    install_selected_driver,
+    reset_driver_state,
+    increment_driver_selection,
+    decrement_driver_selection,
+};
 
 pub static DRIVER_LIST: Lazy<Mutex<Vec<String>>> = Lazy::new(|| Mutex::new(vec![]));
 
@@ -52,10 +51,7 @@ pub fn draw_driver_menu(f: &mut Frame) {
     let layout = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
-        .constraints([
-            Constraint::Length(3),
-            Constraint::Min(1),
-        ])
+        .constraints([Constraint::Length(3), Constraint::Min(1)])
         .split(f.area());
 
     let list = List::new(items)
@@ -63,8 +59,10 @@ pub fn draw_driver_menu(f: &mut Frame) {
         .highlight_style(Style::default().fg(Color::Black).bg(Color::White))
         .highlight_symbol("▶ ");
 
-    let info = Paragraph::new(Span::raw("Use ↑/↓ to choose driver. Press Enter to install. Press q to cancel."))
-        .block(Block::default().borders(Borders::ALL).title("Instructions"));
+    let info = Paragraph::new(Span::raw(
+        "Use ↑/↓ to choose driver. Press Enter to install. Press q to cancel.",
+    ))
+    .block(Block::default().borders(Borders::ALL).title("Instructions"));
 
     f.render_stateful_widget(list, layout[0], &mut state);
     f.render_widget(info, layout[1]);

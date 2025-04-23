@@ -45,6 +45,17 @@ pub fn decrement_device_selection() {
     }
 }
 
+pub fn run_gamepad_test() {
+    let devices = DEVICES.lock().unwrap();
+    let index = *DEVICE_INDEX.lock().unwrap();
+
+    let fallback = "No device selected.".to_string();
+    let selected = devices.get(index).unwrap_or(&fallback);
+
+    let mut msg = MESSAGE.lock().unwrap();
+    *msg = format!("Running test on: {}\n(Gamepad button test in development)", selected);
+}
+
 pub fn draw_gamepad_test(f: &mut Frame) {
     let size = f.area();
     let devices = DEVICES.lock().unwrap();
