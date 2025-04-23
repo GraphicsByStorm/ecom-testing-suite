@@ -1,0 +1,253 @@
+warning: unused import: `Instant`
+  --> src/audio_test/mod.rs:13:27
+   |
+13 | use std::time::{Duration, Instant};
+   |                           ^^^^^^^
+   |
+help: if this is a test module, consider adding a `#[cfg(test)]` to the containing module
+  --> src/main.rs:15:1
+   |
+15 | mod audio_test;
+   | ^^^^^^^^^^^^^^^
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `GpuType`
+  --> src/gpu_test/mod.rs:1:60
+   |
+1  | use crate::gpu_detect::{get_selected_gpu, detect_gpu_type, GpuType};
+   |                                                            ^^^^^^^
+   |
+help: if this is a test module, consider adding a `#[cfg(test)]` to the containing module
+  --> src/main.rs:18:1
+   |
+18 | mod gpu_test;
+   | ^^^^^^^^^^^^^
+
+warning: unused imports: `Constraint`, `Direction`, and `Layout`
+ --> src/menu/mod.rs:2:25
+  |
+2 |     layout::{Alignment, Constraint, Direction, Layout},
+  |                         ^^^^^^^^^^  ^^^^^^^^^  ^^^^^^
+
+warning: unused imports: `Block`, `Borders`, `Color`, `Constraint`, `Direction`, `Layout`, `ListItem`, `ListState`, `List`, and `Style`
+ --> src/menu/input.rs:2:14
+  |
+2 |     layout::{Constraint, Direction, Layout},
+  |              ^^^^^^^^^^  ^^^^^^^^^  ^^^^^^
+3 |     style::{Color, Style},
+  |             ^^^^^  ^^^^^
+4 |     widgets::{Block, Borders, List, ListItem, ListState},
+  |               ^^^^^  ^^^^^^^  ^^^^  ^^^^^^^^  ^^^^^^^^^
+
+warning: unused import: `run_keyboard_test`
+ --> src/menu/input.rs:9:95
+  |
+9 |     keyboard_test::{self, check_keyboard_test_active, draw_keyboard_test, exit_keyboard_test, run_keyboard_test},
+  |                                                                                               ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Span`
+ --> src/photo_exporter/mod.rs:5:18
+  |
+5 |     text::{Line, Span, Text},
+  |                  ^^^^
+
+warning: unused import: `Duration`
+  --> src/stability_test/mod.rs:3:17
+   |
+3  | use std::time::{Duration, Instant};
+   |                 ^^^^^^^^
+   |
+help: if this is a test module, consider adding a `#[cfg(test)]` to the containing module
+  --> src/main.rs:24:1
+   |
+24 | mod stability_test;
+   | ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `GpuType`
+  --> src/stability_test/mod.rs:5:60
+   |
+5  | use crate::gpu_detect::{detect_gpu_type, get_selected_gpu, GpuType};
+   |                                                            ^^^^^^^
+   |
+help: if this is a test module, consider adding a `#[cfg(test)]` to the containing module
+  --> src/main.rs:24:1
+   |
+24 | mod stability_test;
+   | ^^^^^^^^^^^^^^^^^^^
+
+warning: function `bordered_block` is never used
+ --> src/theme/mod.rs:8:8
+  |
+8 | pub fn bordered_block(title: &str) -> Block {
+  |        ^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` on by default
+
+warning: function `highlight_style` is never used
+  --> src/theme/mod.rs:20:8
+   |
+20 | pub fn highlight_style() -> Style {
+   |        ^^^^^^^^^^^^^^^
+
+warning: function `info_box` is never used
+  --> src/theme/mod.rs:28:8
+   |
+28 | pub fn info_box<'a>(title: &'a str, content: &'a str) -> Line<'a> {
+   |        ^^^^^^^^
+
+warning: static `DEVICES` is never used
+  --> src/audio_test/mod.rs:17:8
+   |
+17 | static DEVICES: Lazy<Mutex<Vec<String>>> = Lazy::new(|| Mutex::new(vec![]));
+   |        ^^^^^^^
+
+warning: static `DEVICE_INDEX` is never used
+  --> src/audio_test/mod.rs:18:8
+   |
+18 | static DEVICE_INDEX: Lazy<Mutex<usize>> = Lazy::new(|| Mutex::new(0));
+   |        ^^^^^^^^^^^^
+
+warning: static `MESSAGE` is never used
+  --> src/audio_test/mod.rs:19:8
+   |
+19 | static MESSAGE: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
+   |        ^^^^^^^
+
+warning: function `run_audio_test` is never used
+  --> src/audio_test/mod.rs:81:8
+   |
+81 | pub fn run_audio_test() {
+   |        ^^^^^^^^^^^^^^
+
+warning: function `run_gamepad_test` is never used
+  --> src/gamepad_test/mod.rs:48:8
+   |
+48 | pub fn run_gamepad_test() {
+   |        ^^^^^^^^^^^^^^^^
+
+warning: function `set_selected_gpu` is never used
+  --> src/gpu_detect/mod.rs:34:8
+   |
+34 | pub fn set_selected_gpu(name: &str) {
+   |        ^^^^^^^^^^^^^^^^
+
+warning: enum `TestMode` is never used
+  --> src/gpu_test/mod.rs:15:10
+   |
+15 | pub enum TestMode {
+   |          ^^^^^^^^
+   |
+   = note: `TestMode` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: static `GPU_TEST_ACTIVE` is never used
+  --> src/gpu_test/mod.rs:20:12
+   |
+20 | pub static GPU_TEST_ACTIVE: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
+   |            ^^^^^^^^^^^^^^^
+
+warning: static `CURRENT_TEST_MODE` is never used
+  --> src/gpu_test/mod.rs:21:12
+   |
+21 | pub static CURRENT_TEST_MODE: Lazy<Mutex<Option<TestMode>>> = Lazy::new(|| Mutex::new(None));
+   |            ^^^^^^^^^^^^^^^^^
+
+warning: static `GPU_TEST_STARTED` is never used
+  --> src/gpu_test/mod.rs:22:12
+   |
+22 | pub static GPU_TEST_STARTED: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
+   |            ^^^^^^^^^^^^^^^^
+
+warning: function `set_test_mode` is never used
+  --> src/gpu_test/mod.rs:24:8
+   |
+24 | pub fn set_test_mode(mode: TestMode) {
+   |        ^^^^^^^^^^^^^
+
+warning: function `clear_test_mode` is never used
+  --> src/gpu_test/mod.rs:30:8
+   |
+30 | pub fn clear_test_mode() {
+   |        ^^^^^^^^^^^^^^^
+
+warning: function `check_test_active` is never used
+  --> src/gpu_test/mod.rs:36:8
+   |
+36 | pub fn check_test_active() -> bool {
+   |        ^^^^^^^^^^^^^^^^^
+
+warning: function `draw_gpu_testing` is never used
+  --> src/gpu_test/mod.rs:40:8
+   |
+40 | pub fn draw_gpu_testing(f: &mut Frame) {
+   |        ^^^^^^^^^^^^^^^^
+
+warning: function `run_keyboard_test` is never used
+  --> src/keyboard_test/mod.rs:35:8
+   |
+35 | pub fn run_keyboard_test() {
+   |        ^^^^^^^^^^^^^^^^^
+
+warning: function `draw_conditional_screens` is never used
+   --> src/menu/mod.rs:105:8
+    |
+105 | pub fn draw_conditional_screens(f: &mut Frame) {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `handle_key_press` is never used
+   --> src/menu/mod.rs:125:8
+    |
+125 | pub fn handle_key_press(key: KeyCode) {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `launch_selected_test` is never used
+  --> src/menu/input.rs:64:8
+   |
+64 | pub fn launch_selected_test() {
+   |        ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `draw_disk_selection` is never used
+   --> src/smart/mod.rs:145:8
+    |
+145 | pub fn draw_disk_selection(f: &mut Frame) {
+    |        ^^^^^^^^^^^^^^^^^^^
+
+warning: constant `KB` is never used
+   --> src/smart/mod.rs:224:11
+    |
+224 |     const KB: u64 = 1 << 10;
+    |           ^^
+
+warning: `electronics_tui_tester` (bin "electronics_tui_tester") generated 31 warnings (run `cargo fix --bin "electronics_tui_tester"` to apply 8 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running `target/debug/electronics_tui_tester`
+
+thread 'main' panicked at src/smart/mod.rs:82:39:
+begin <= end (43 <= 35) when slicing `User Capacity:    1,000,204,886,016 bytes [1.00 TB]`
+stack backtrace:
+   0: rust_begin_unwind
+   1: core::panicking::panic_fmt
+   2: core::str::slice_error_fail_rt
+   3: core::str::slice_error_fail
+   4: core::str::traits::<impl core::slice::index::SliceIndex<str> for core::ops::range::Range<usize>>::index
+             at /usr/src/debug/rust/rustc-1.86.0-src/library/core/src/str/traits.rs:240:21
+   5: core::str::traits::<impl core::ops::index::Index<I> for str>::index
+             at /usr/src/debug/rust/rustc-1.86.0-src/library/core/src/str/traits.rs:60:9
+   6: electronics_tui_tester::smart::draw_smart_output
+             at ./src/smart/mod.rs:82:39
+   7: electronics_tui_tester::menu::disk::draw_smart_output
+             at ./src/menu/disk.rs:66:5
+   8: electronics_tui_tester::run_app::{{closure}}
+             at ./src/main.rs:55:17
+   9: ratatui::terminal::terminal::Terminal<B>::draw::{{closure}}
+             at /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ratatui-0.29.0/src/terminal/terminal.rs:309:13
+  10: ratatui::terminal::terminal::Terminal<B>::try_draw
+             at /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ratatui-0.29.0/src/terminal/terminal.rs:390:9
+  11: ratatui::terminal::terminal::Terminal<B>::draw
+             at /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ratatui-0.29.0/src/terminal/terminal.rs:308:9
+  12: electronics_tui_tester::run_app
+             at ./src/main.rs:45:9
+  13: electronics_tui_tester::main
+             at ./src/main.rs:34:18
+  14: core::ops::function::FnOnce::call_once
+             at /usr/src/debug/rust/rustc-1.86.0-src/library/core/src/ops/function.rs:250:5
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.

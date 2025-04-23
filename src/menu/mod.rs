@@ -13,11 +13,11 @@ use std::sync::Mutex;
 
 use crate::photo_exporter;
 use crate::smart;
-use crate::smart::enter_disk_selection;
+use crate::smart::{enter_disk_selection, scroll_up as smart_scroll_up, scroll_down as smart_scroll_down};
 use crate::keyboard_test::enter_keyboard_test;
 use crate::gamepad_test::enter_gamepad_test;
 use crate::audio_test::enter_audio_test;
-use crate::nvidia_drivers::exit_driver_selection;
+use crate::nvidia_drivers::{exit_driver_selection};
 use crate::nvidia_drivers;
 use crate::gpu_test::{check_test_active, draw_gpu_testing};
 use crate::stress_test::{check_stress_active, draw_stress_test_popup, stop_stress_test};
@@ -47,7 +47,6 @@ pub fn draw_main_menu(f: &mut Frame) {
     let area = f.area();
     let selected = *MENU_INDEX.lock().unwrap();
 
-    // Build menu with triangle marker and highlight
     let mut lines = Vec::new();
     for (i, option) in MENU_OPTIONS.iter().enumerate() {
         let prefix = if i == selected { "▶ " } else { "  " };
@@ -70,7 +69,6 @@ pub fn draw_main_menu(f: &mut Frame) {
 
     f.render_widget(paragraph, area);
 }
-
 
 pub fn increment_menu() {
     let mut index = MENU_INDEX.lock().unwrap();
@@ -142,7 +140,9 @@ pub fn handle_key_press(key: KeyCode) {
             }
         }
         KeyCode::Up => {
-            if disk::check_disk_select() {
+            if smart::check_smart_active() {
+                smart_scroll_up();
+            } else if disk::check_disk_select() {
                 disk::decrement_disk_selection();
             } else if input::check_input_select() {
                 input::decrement_input_selection();
@@ -153,7 +153,9 @@ pub fn handle_key_press(key: KeyCode) {
             }
         }
         KeyCode::Down => {
-            if disk::check_disk_select() {
+            if smart::check_smart_active() {
+                smart_scroll_down();
+            } else if disk::check_disk_select() {
                 disk::increment_disk_selection();
             } else if input::check_input_select() {
                 input::increment_input_selection();
