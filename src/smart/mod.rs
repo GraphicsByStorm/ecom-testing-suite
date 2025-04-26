@@ -127,12 +127,18 @@ pub fn draw_smart_output(f: &mut Frame) {
 
     let top_row = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(33), Constraint::Percentage(34), Constraint::Percentage(33)])
+        .constraints([
+            Constraint::Ratio(1, 3), 
+            Constraint::Ratio(1, 3), 
+            Constraint::Ratio(1, 3)])
         .split(grid_chunks[0]);
 
     let bottom_row = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(33), Constraint::Percentage(34), Constraint::Percentage(33)])
+        .constraints([
+            Constraint::Ratio(1, 3), 
+            Constraint::Ratio(1, 3), 
+            Constraint::Ratio(1, 3)])
         .split(grid_chunks[1]);
 
     let boxes = [
@@ -145,34 +151,63 @@ pub fn draw_smart_output(f: &mut Frame) {
     ];
 
     for (label, value, color, icon, rect) in boxes.iter() {
-        let text = Text::from(Span::styled(format!("{} {}", icon, value), Style::default().fg(*color).bold()));
-        let block = Paragraph::new(text).block(Block::default().borders(Borders::ALL).title(*label));
-        f.render_widget(block, *rect);
+        let lines = vec![
+            Line::from(Span::styled(
+                format!("{}", icon),
+                Style::default().fg(*color).bold(),
+            )),
+            Line::from(Span::styled(
+                format!("{}: {}", label, value),
+                Style::default().fg(*color),
+            )),
+        ];
+
+        let paragraph = Paragraph::new(Text::from(lines))
+            .block(Block::default()
+                .borders(Borders::ALL)
+                .title(Span::styled(
+                    *label,
+                    Style::default().fg(Color::White).bold(),
+                ))
+            )
+            .alignment(ratatui::layout::Alignment::Center);
+
+        f.render_widget(paragraph, *rect);
     }
 
     let mut lines = Vec::new();
     for line in output.lines() {
         if let Some((key, value)) = line.split_once(':') {
-            lines.push(Line::from(Span::raw(format!("{}: {}", key.trim(), value.trim()))));
+            lines.push(Line::from(vec![
+                Span::styled(
+                    format!("{}: ", key.trim()),
+                    Style::default().fg(Color::Cyan).bold(),
+                ),
+                Span::styled(
+                    value.trim(),
+                    Style::default().fg(Color::White),
+                ),
+            ]));
         } else {
-            lines.push(Line::from(Span::raw(line)));
+            lines.push(Line::from(Span::raw(format!(" {}", line))));
         }
     }
 
-    let paragraph = Paragraph::new(Text::from(lines.clone()))
-        .block(Block::default().title("Full SMART Report").borders(Borders::ALL))
-        .scroll((scroll, 0));
+    let content_height = lines.len().saturating_sub(1).max(1);
+    let scroll_state = ScrollbarState::new(content_height).position(scroll as usize);
 
-    let mut scroll_state = ScrollbarState::new(lines.len());
-    scroll_state = scroll_state.position(scroll as usize);
+    let paragraph = Paragraph::new(Text::from(lines.clone()))
+        .block(Block::default().title("SMART Attributes").borders(Borders::ALL))
+        .scroll((scroll, 0))
+        .wrap(ratatui::widgets::Wrap { trim: true });
 
     let scrollbar = Scrollbar::default()
         .orientation(ScrollbarOrientation::VerticalRight)
-        .track_symbol(Some("│"))
+        .track_symbol(Some("|"))
         .thumb_symbol("█");
 
     f.render_widget(paragraph, main_chunks[1]);
-    f.render_stateful_widget(scrollbar, main_chunks[1], &mut scroll_state);
+    f.render_stateful_widget(scrollbar, main_chunks[1], &mut scroll_state.clone());
 }
 
 pub fn scroll_up() {
