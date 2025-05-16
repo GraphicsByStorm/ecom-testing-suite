@@ -29,8 +29,8 @@ pub mod input;
 
 static MENU_OPTIONS: Lazy<Vec<&str>> = Lazy::new(|| {
     vec![
-        "Run SMART Test",              // 0
-        "AMD GPU Test",                // 1
+        "Run SMART Test",             // 0
+        "AMD GPU Test",               // 1
         "NVIDIA GPU Test",            // 2
         "Photo Exporter",             // 3
         "NVIDIA Driver Installer",    // 4
