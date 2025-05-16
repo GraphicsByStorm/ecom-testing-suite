@@ -77,14 +77,17 @@ pub fn draw_smart_output(f: &mut Frame) {
             family = line.split(':').nth(1).unwrap_or("").trim();
         }
         if line.contains("User Capacity:") {
-            if let Some(start) = line.find('[') {
-                if let Some(end) = line.find(']') {
-                    let raw_str = &line[start + 1..end];
-                    let sanitized = raw_str.replace(",", "").replace(" bytes", "").trim().to_string();
-                    if let Ok(bytes) = sanitized.parse::<u64>() {
-                        capacity = format_capacity(bytes);
-                    }
-                }
+            let raw = line
+                .split(':')
+                .nth(1)
+                .unwrap_or("")
+                .replace(",", "")
+                .replace("bytes", "")
+                .trim()
+                .to_string();
+                
+            if let Ok(bytes) = raw.parse::<u64>() {
+                capacity = format_capacity(bytes);
             }
         }
         if line.contains("Temperature_Celsius") {
